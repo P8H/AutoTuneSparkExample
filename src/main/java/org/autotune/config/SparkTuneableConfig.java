@@ -1,11 +1,14 @@
 package org.autotune.config;
 
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.storage.StorageLevel;
+import org.apache.spark.storage.StorageLevel$;
 import org.autotune.NominalParameter;
 import org.autotune.NumericParameter;
 import org.autotune.TuneableParameters;
 
 import java.io.Serializable;
+import java.lang.reflect.Field;
 
 /**
  * Created by KevinRoj on 21.05.17.
@@ -28,14 +31,24 @@ public class SparkTuneableConfig implements Serializable {
     public boolean broadcastCompress = true;
     @NominalParameter(values = {"false", "true"})
     public boolean rddCompress = false;
-    @NumericParameter(min = 1, max = 4)
+    @NumericParameter(min = 1, max = 32)
     public int defaultParallelism = 4; //default number of cores
-    @NumericParameter(min = 1, max = 4)
-    public long executorCores = 4;
-    @NumericParameter(min = 1, max = 4)
-    public long taskCpus = 1;
+    @NominalParameter(values = {"false", "true"})
+    public boolean defaultCache = true;
+
 
     public SparkSession.Builder setConfig(SparkSession.Builder builder) {
+
+        try {
+            if (!this.defaultCache) {
+                Field fieldX = StorageLevel$.class.getDeclaredField("MEMORY_AND_DISK");
+                fieldX.setAccessible(true);
+                fieldX.set(StorageLevel$.MODULE$, StorageLevel.MEMORY_ONLY_SER());
+            }
+        } catch (Exception exc) {
+
+        }
+
         return builder
                 .config("spark.sql.inMemoryColumnarStorage.compressed", this.inMemoryColumnarStorageCompressed)
                 .config("spark.sql.files.maxPartitionBytes", this.maxPartitionBytes)

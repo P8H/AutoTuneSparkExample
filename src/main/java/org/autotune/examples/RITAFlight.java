@@ -23,10 +23,10 @@ public class RITAFlight {
         obj.firstTest();
     }
 
-    static private SparkSession.Builder coreSparkBuilder(){
+    static private SparkSession.Builder coreSparkBuilder(int iteration) {
         return SparkSession
                 .builder()
-                .appName("RITA flight");
+                .appName("RITA flight AutoTune " + iteration);
     }
 
 
@@ -39,9 +39,7 @@ public class RITAFlight {
         AutoTune<SparkTuneableConfig> tuner = new AutoTuneDefault(new SparkTuneableConfig());
         {
             //warm up
-            SparkTuneableConfig cfgDefault = new SparkTuneableConfig(); //with default values
-
-            SparkSession sparkD = cfgDefault.setConfig(coreSparkBuilder()).getOrCreate();
+            SparkSession sparkD = coreSparkBuilder(-1).getOrCreate();
             reduceLogLevel(sparkD);
 
             simpleSparkMethod(sparkD);
@@ -50,7 +48,7 @@ public class RITAFlight {
 
         for (int t = 0; t < 40; t++) { //40 benchmark tests
             SparkTuneableConfig cfg = tuner.start().getConfig();
-            SparkSession spark = cfg.setConfig(coreSparkBuilder()).getOrCreate();
+            SparkSession spark = cfg.setConfig(coreSparkBuilder(t)).getOrCreate();
             reduceLogLevel(spark);
 
             tuner.startTimeMeasure();
@@ -65,9 +63,18 @@ public class RITAFlight {
         }
 
         {
+            //last time before example evaluation
+            SparkSession sparkD = coreSparkBuilder(-2).getOrCreate();
+            reduceLogLevel(sparkD);
+
+            simpleSparkMethod(sparkD);
+            sparkD.stop();
+        }
+
+        {
             //Get best configuration an wait
             SparkTuneableConfig cfg = tuner.getBestConfiguration();
-            SparkSession spark = cfg.setConfig(coreSparkBuilder()).getOrCreate();
+            SparkSession spark = cfg.setConfig(coreSparkBuilder(999999)).getOrCreate();
 
             reduceLogLevel(spark);
 
