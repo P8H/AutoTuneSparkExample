@@ -33,22 +33,27 @@ public class SparkTuneableConfig implements Serializable {
     public boolean rddCompress = false;
     @NumericParameter(min = 1, max = 32)
     public int defaultParallelism = 4; //default number of cores
-    @NominalParameter(values = {"false", "true"})
-    public boolean defaultCache = true;
+    @NumericParameter(min = 15, max = 480)
+    public int reducerMaxSizeInFlight = 48;
+    @NumericParameter(min = 10, max = 480)
+    public int shuffleSortBypassMergeThreshold = 200;
+    @NominalParameter(values = {"lz4", "lzf", "snappy"})
+    public String compressionCodec = "lz4";
+    @NumericParameter(min = 1, max = 20)
+    public int broadcastBlockSize = 4;
+    /* JVM options */
+    /*
+    @NominalParameter(values = {"", " -XX:+AlwaysPreTouch "})
+    public String alwaysPreTouch = "";
+    @NumericParameter(min=5, max=90)
+    public int initiatingHeapOccupancyPercent = 35;
+    @NumericParameter(min=2, max=60)
+    public int concGCThread = 20;
+    */
+
 
 
     public SparkSession.Builder setConfig(SparkSession.Builder builder) {
-
-        try {
-            if (!this.defaultCache) {
-                Field fieldX = StorageLevel$.class.getDeclaredField("MEMORY_AND_DISK");
-                fieldX.setAccessible(true);
-                fieldX.set(StorageLevel$.MODULE$, StorageLevel.MEMORY_ONLY_SER());
-            }
-        } catch (Exception exc) {
-
-        }
-
         return builder
                 .config("spark.sql.inMemoryColumnarStorage.compressed", this.inMemoryColumnarStorageCompressed)
                 .config("spark.sql.files.maxPartitionBytes", this.maxPartitionBytes)
@@ -57,8 +62,12 @@ public class SparkTuneableConfig implements Serializable {
                 .config("spark.shuffle.spill.compress", this.shuffleSpillCompress)
                 .config("spark.broadcast.compress", this.broadcastCompress)
                 .config("spark.rdd.compress", this.rddCompress)
+                .config("spark.default.parallelism", this.defaultParallelism)
+                .config("spark.reducer.maxSizeInFlight", this.reducerMaxSizeInFlight + "m")
+                .config("spark.shuffle.sort.bypassMergeThreshold", this.shuffleSortBypassMergeThreshold)
+                .config("spark.io.compression.codec", this.compressionCodec)
+                .config("spark.broadcast.blockSize", this.broadcastBlockSize + "m")
                 .config("spark.default.parallelism", this.defaultParallelism);
-        //.config("spark.executor.cores", this.executorCores)
-        //.config("spark.task.cpus", this.taskCpus);
+        //.config("spark.executor.extraJavaOptions", "-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=" + initiatingHeapOccupancyPercent + " -XX:ConcGCThread=" + concGCThread + alwaysPreTouch);
     }
 }
