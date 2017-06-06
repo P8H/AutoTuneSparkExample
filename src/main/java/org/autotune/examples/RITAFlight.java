@@ -37,16 +37,19 @@ public class RITAFlight {
 
     static public void firstTest() throws InterruptedException {
         AutoTune<SparkTuneableConfig> tuner = new AutoTuneDefault(new SparkTuneableConfig());
-        {
-            //warm up
-            SparkSession sparkD = coreSparkBuilder(-1).getOrCreate();
-            reduceLogLevel(sparkD);
 
-            simpleSparkMethod(sparkD);
-            sparkD.stop();
+        for (int t = 0; t < 3; t++) {
+            {
+                //warm up
+                SparkSession sparkD = coreSparkBuilder(-1).getOrCreate();
+                reduceLogLevel(sparkD);
+
+                simpleSparkMethod(sparkD);
+                sparkD.stop();
+            }
         }
 
-        for (int t = 0; t < 40; t++) { //40 benchmark tests
+        for (int t = 0; t < 140; t++) { //40 benchmark tests
             SparkTuneableConfig cfg = tuner.start().getConfig();
             SparkSession spark = cfg.setConfig(coreSparkBuilder(t)).getOrCreate();
             reduceLogLevel(spark);
@@ -66,31 +69,26 @@ public class RITAFlight {
             //last time before example evaluation
             SparkSession sparkD = coreSparkBuilder(-2).getOrCreate();
             reduceLogLevel(sparkD);
-
+            long startTimeStamp = System.currentTimeMillis();
             simpleSparkMethod(sparkD);
+            System.out.println("Default cost: " + (System.currentTimeMillis() - startTimeStamp));
+
             sparkD.stop();
         }
 
         {
-            //Get best configuration an wait
-            SparkTuneableConfig cfg = tuner.getBestConfiguration();
-            SparkSession spark = cfg.setConfig(coreSparkBuilder(999999)).getOrCreate();
-
-            reduceLogLevel(spark);
-
-            simpleSparkMethod(spark);
 
             System.out.println("Best configuration with result:" + tuner.getBestResult());
-            Thread.sleep(1000 * 60 * 10); // wait a little bit
+
         }
 
     }
 
     static void simpleSparkMethod(SparkSession spark) {
-        Dataset<Row> dataset1 = spark.read().format("csv").option("header", true).option("inferSchema", false).load("hdfs://141.100.62.105:54310/user/istkerojc/flight/rita_flight/rita_flight_2008.csv");
-        //Dataset<Row> dataset2 = spark.read().format("csv").option("header", true).option("inferSchema", false).load("datasets/rita_flight/rita_flight_2007.csv");
-        //Dataset<Row> dataset3 = spark.read().format("csv").option("header", true).option("inferSchema", false).load("datasets/rita_flight/rita_flight_2006.csv");
-        //dataset1 = dataset1.union(dataset2).union(dataset3);
+        Dataset<Row> dataset1 = spark.read().format("csv").option("header", true).option("inferSchema", false).load("datasets/rita_flight/rita_flight_2008.csv");
+        Dataset<Row> dataset2 = spark.read().format("csv").option("header", true).option("inferSchema", false).load("datasets/rita_flight/rita_flight_2007.csv");
+        Dataset<Row> dataset3 = spark.read().format("csv").option("header", true).option("inferSchema", false).load("datasets/rita_flight/rita_flight_2006.csv");
+        dataset1 = dataset1.union(dataset2).union(dataset3);
 
         Dataset<Row> arrivalDelay = dataset1.select("Dest", "ArrDelay")
                 .map(value -> {
