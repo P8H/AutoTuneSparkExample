@@ -31,8 +31,8 @@ public class SparkTuneableConfig implements Serializable {
     public boolean broadcastCompress = true;
     @NominalParameter(values = {"false", "true"})
     public boolean rddCompress = false;
-    @NumericParameter(min = 1, max = 32)
-    public int defaultParallelism = 4; //default number of cores
+    @NumericParameter(min = 1, max = 64)
+    public int defaultParallelism = 10; //default number of cores
     @NumericParameter(min = 15, max = 480)
     public int reducerMaxSizeInFlight = 48;
     @NumericParameter(min = 10, max = 480)
