@@ -91,6 +91,7 @@ public class RITAFlight {
         dataset1 = dataset1.union(dataset2).union(dataset3);
 
         Dataset<Row> arrivalDelay = dataset1.select("Dest", "ArrDelay")
+                //safe parsing of attribute "ArrDelay"
                 .map(value -> {
                     int arrDelay;
                     try {
