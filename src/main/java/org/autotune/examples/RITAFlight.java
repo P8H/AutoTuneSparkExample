@@ -66,7 +66,7 @@ public class RITAFlight {
         }
 
         {
-            //last time before example evaluation
+            //last experiment with unmodified default configuration
             SparkSession sparkD = coreSparkBuilder(-2).getOrCreate();
             reduceLogLevel(sparkD);
             long startTimeStamp = System.currentTimeMillis();
@@ -105,7 +105,7 @@ public class RITAFlight {
                 .groupBy("Dest")
                 .agg(mean("ArrDelay").alias("meanDelay"), max("ArrDelay").alias("maxDelay"), sum("ArrDelay").alias("sumDelay"))
                 .sort(desc("meanDelay"), desc("maxDelay"))
-                .cache();
+                .cache(); //ensures the data is really processed
         arrivalDelay.show();
     }
 }
